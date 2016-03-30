@@ -3,7 +3,7 @@ Wifi Spy
 
 An attempt to sniff Wifi traffic.
 
-Uses [Pcapy] (https://github.com/CoreSecurity/pcapy) to capture packets. It's probably the best mantained out of [many] (https://pypi.python.org/pypi?%3Aaction=search&term=pcap) libraries wrapping the somewhat definitive packet capture library [libpcap] (https://github.com/the-tcpdump-group/libpcap).
+Uses [Pcapy](https://github.com/CoreSecurity/pcapy) to capture packets. It's probably the best mantained out of [many] (https://pypi.python.org/pypi?%3Aaction=search&term=pcap) libraries wrapping the somewhat definitive packet capture library [libpcap] (https://github.com/the-tcpdump-group/libpcap).
 
 Uses [Impacket] (https://github.com/CoreSecurity/impacket) to interrogate and extract data from each packet. It's one of two popular packet manipulation libraries, the other being [dpkt] (https://github.com/kbandla/dpkt).
 
