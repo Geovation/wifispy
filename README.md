@@ -17,6 +17,18 @@ Running
 Needs to be run with `sudo` because we're doing system-level stuff. For the same reason `pcapy` won't work within a virtual environment.
 
 
+Approach
+--------
+
+1. Put card into [monitor mode](https://en.wikipedia.org/wiki/Monitor_mode). This means it will passively sniff all wireless traffic it sees. It differs from the somewhat similar [promiscuous mode](https://en.wikipedia.org/wiki/Promiscuous_mode), which (as I understand it) gives you more information, but requires you to be connected to a network. Not all cards support monitor mode. This is done via a terminal command, as it doesn't seem possible through Python.
+
+2. Rotate channels. There are 13 channels in the 2.4GHz band (numbers 1 to 13), which are the most commonly used, plus a number of others in the 5GHz band. Since cards can only be tuned to one channel at a time, we need to randomly switch channels in the background to ensure we're picking up devices using any channel. This code randomly selects a channel every second. Changing the channel is also done via a terminal command.
+
+3. Sniff packets using Pcapy. Each packet recieved goes into a function for processing.
+
+4. Process sniffed packets using Dpkt. Each first needs to be decoded. There are three types of wireless (aka. 802.11) packet: management, control, and data.
+
+
 Problems
 --------
 
