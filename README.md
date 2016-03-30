@@ -3,9 +3,9 @@ Wifi Spy
 
 An attempt to sniff Wifi traffic.
 
-Uses [Pcapy](https://github.com/CoreSecurity/pcapy) to capture packets. It's probably the best mantained out of [many] (https://pypi.python.org/pypi?%3Aaction=search&term=pcap) libraries wrapping the somewhat definitive packet capture library [libpcap] (https://github.com/the-tcpdump-group/libpcap).
+Uses [Pcapy](https://github.com/CoreSecurity/pcapy) to capture packets. It's probably the best mantained out of [many](https://pypi.python.org/pypi?%3Aaction=search&term=pcap) libraries wrapping the somewhat definitive packet capture library [libpcap](https://github.com/the-tcpdump-group/libpcap).
 
-Uses [Impacket] (https://github.com/CoreSecurity/impacket) to interrogate and extract data from each packet. It's one of two popular packet manipulation libraries, the other being [dpkt] (https://github.com/kbandla/dpkt).
+Uses [Impacket](https://github.com/CoreSecurity/impacket) to interrogate and extract data from each packet. It's one of two popular packet manipulation libraries, the other being [dpkt](https://github.com/kbandla/dpkt).
 
 
 Running
@@ -26,15 +26,15 @@ We never seem to get any real packets coming through from `pcapy`. Suspect it's 
 Other approaches
 ----------------
 
-* Use [`pyshark`] (https://github.com/KimiNewt/pyshark), which wraps [Wireshark] (https://www.wireshark.org/)'s `tshark` command-line utility.
+* Use [`pyshark`](https://github.com/KimiNewt/pyshark), which wraps [Wireshark](https://www.wireshark.org/)'s `tshark` command-line utility.
 * Call `tcpdump` to write a `pcap` file in one thread, then read that file from within Python.
 
 
 Other tools
 -----------
 
-* [wifi-monitor] (https://github.com/dave5623/wifi_monitor)
-* [wifi-rifle] (https://github.com/sensepost/WiFi-Rifle)
+* [wifi-monitor](https://github.com/dave5623/wifi_monitor)
+* [wifi-rifle](https://github.com/sensepost/WiFi-Rifle)
 
 
 Articles
