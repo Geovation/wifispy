@@ -95,6 +95,14 @@ Sniff traffic and store in a `pcap` file:
 
 ### Linux
 
+Check what country the system thinks you're in. This will affect what channels you can use.
+
+    $ iw reg get
+
+It should say `country GB`, but if not:
+
+    $ iw reg set GB
+
 Find out the names of your network interfaces:
 
     $ ifconfig
