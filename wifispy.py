@@ -41,7 +41,7 @@ def rotator(channels, change_channel):
             except BaseException as e: sys.exit(e)
     multiprocessing.Process(target=hop).start()
 
-def to_address(array): # decode a MAC or BSSID address
+def to_address(address): # decode a MAC or BSSID address
     return ':'.join('%02x' % ord(b) for b in address)
 
 def sniff(interface):
