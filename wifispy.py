@@ -51,24 +51,27 @@ def sniff(interface):
     packets = pcapy.open_live(interface, max_packet_size, promiscuous, timeout)
     packets.setfilter('') # bpf syntax (empty string = everything)
     def loop(header, data):
-        packet = dpkt.radiotap.Radiotap(data)
-        frame = packet.data
-        if frame.type == dpkt.ieee80211.MGMT_TYPE:
-            subtype = str(frame.subtype) # listed here: https://github.com/kbandla/dpkt/blob/b8fe25c7b310954daca86df730e36eaa2d06fb19/dpkt/ieee80211.py#L15
-            source_address = to_address(frame.mgmt.src)
-            destination_address = to_address(frame.mgmt.dst)
-            ap_address = to_address(frame.mgmt.bssid)
-            ap_name = frame.ssid.data
-            print('[MANAGEMENT FRAME]  ' + subtype + ' * ' + ap_name + ' * ' + source_address + ' => ' + destination_address)
-        elif frame.type == dpkt.ieee80211.CTL_TYPE:
-            subtype = str(frame.subtype)
-            print('[CONTROL FRAME]  ' + subtype)
-        elif frame.type == dpkt.ieee80211.DATA_TYPE:
-            subtype = str(frame.subtype)
-            source_address = to_address(frame.data_frame.src)
-            destination_address = to_address(frame.data_frame.dst)
-            ap_address = to_address(frame.data_frame.bssid)
-            print('[DATA FRAME]  ' + subtype + ' * ' + ap_address + ' * ' + source_address + ' => ' + destination_address)
+        try:
+            packet = dpkt.radiotap.Radiotap(data)
+            frame = packet.data
+            if frame.type == dpkt.ieee80211.MGMT_TYPE:
+                subtype = str(frame.subtype)
+                source_address = to_address(frame.mgmt.src)
+                destination_address = to_address(frame.mgmt.dst)
+                ap_address = to_address(frame.mgmt.bssid)
+                ap_name = frame.ssid.data if hasattr(frame, 'ssid') else '(n/a)'
+                print('[MANAGEMENT FRAME] ' + subtype + ' * ' + ap_name + ' * ' + source_address + ' => ' + destination_address)
+            elif frame.type == dpkt.ieee80211.CTL_TYPE:
+                subtype = str(frame.subtype)
+                print('[CONTROL FRAME] ' + subtype)
+            elif frame.type == dpkt.ieee80211.DATA_TYPE:
+                subtype = str(frame.subtype)
+                source_address = to_address(frame.data_frame.src)
+                destination_address = to_address(frame.data_frame.dst)
+                ap_address = to_address(frame.data_frame.bssid) if hasattr(frame.data_frame, 'bssid') else '(n/a)'
+                print('[DATA FRAME] ' + subtype + ' * ' + ap_address + ' * ' + source_address + ' => ' + destination_address)
+        except:
+            print('[COULD NOT PARSE PACKET]')
     packets.loop(-1, loop)
 
 start()
