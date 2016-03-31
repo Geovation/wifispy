@@ -54,12 +54,12 @@ def sniff(interface):
         packet = dpkt.radiotap.Radiotap(data)
         frame = packet.data
         if frame.type == dpkt.ieee80211.MGMT_TYPE:
-            source = to_address(frame.mgmt.src)
-            destination = to_address(frame.mgmt.dst)
-            bssid = to_address(frame.mgmt.bssid) # access point address
-            ssid = frame.ssid.data # access point name
             subtype = str(frame.subtype) # listed here: https://github.com/kbandla/dpkt/blob/b8fe25c7b310954daca86df730e36eaa2d06fb19/dpkt/ieee80211.py#L15
-            print('[MANAGEMENT FRAME]  ' + subtype + ' * ' + ssid + ' * ' + source + ' => ' + destination)
+            source_address = to_address(frame.mgmt.src)
+            destination_address = to_address(frame.mgmt.dst)
+            ap_address = to_address(frame.mgmt.bssid)
+            ap_name = frame.ssid.data
+            print('[MANAGEMENT FRAME]  ' + subtype + ' * ' + ap_name + ' * ' + source_address + ' => ' + destination_address)
         elif frame.type == dpkt.ieee80211.CTL_TYPE:
             print('[CONTROL FRAME]')
         elif frame.type == dpkt.ieee80211.DATA_TYPE:
