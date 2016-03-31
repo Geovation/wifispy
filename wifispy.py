@@ -14,13 +14,13 @@ change_channel  = 'airport -c{}'
 
 # linux
 # interface = 'mon0'
-# enable_monitor  = 'ifconfig wlan1 down; iw dev wlan1 interface add mon0 type monitor; ifconfig mon0 down; iw dev mon0 set type monitor; ifconfig mon0 up; ifconfig wlan1 up'
-# disable_monitor = 'iw dev mon0 del'
+# enable_monitor  = 'ifconfig wlan1 down; iw dev wlan1 interface add mon0 type monitor; ifconfig mon0 down; iw dev mon0 set type monitor; ifconfig mon0 up'
+# disable_monitor = 'iw dev mon0 del; ifconfig wlan1 up'
 # change_channel  = 'iw dev mon0 set channel {}'
 
 channels = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, # 2.4GHz
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161 # 5GHz
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 # 2.4GHz
+    # 36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161 # 5GHz
 ]
 
 def start():
@@ -35,7 +35,7 @@ def rotator(channels, change_channel):
         while True:
             try:
                 channel = random.choice(channels)
-                print('Changing to channel ' + str(channel) + '...')
+                print('\nChanging to channel ' + str(channel) + '...\n')
                 os.system(change_channel.format(channel))
                 time.sleep(1) # seconds
             except BaseException as e: sys.exit(e)

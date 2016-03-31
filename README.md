@@ -103,6 +103,10 @@ It should say `country GB`, but if not:
 
     $ iw reg set GB
 
+This will mean you get all possible UK frequencies when you:
+
+    $ iwlist wlan1 freq
+
 Find out the names of your network interfaces:
 
     $ ifconfig
