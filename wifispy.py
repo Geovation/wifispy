@@ -38,7 +38,7 @@ def rotator(channels, change_channel):
                 print('\nChanging to channel ' + str(channel) + '...\n')
                 os.system(change_channel.format(channel))
                 time.sleep(1) # seconds
-            except KeyboardInterrupt as e: sys.exit(e)
+            except BaseException as e: sys.exit(e)
     multiprocessing.Process(target=hop).start()
 
 def to_address(address): # decode a MAC or BSSID address
