@@ -38,7 +38,7 @@ def rotator(channels, change_channel):
                 print('\nChanging to channel ' + str(channel) + '...\n')
                 os.system(change_channel.format(channel))
                 time.sleep(1) # seconds
-            except BaseException as e: sys.exit(e)
+            except KeyboardInterrupt as e: sys.exit(e)
     multiprocessing.Process(target=hop).start()
 
 def to_address(address): # decode a MAC or BSSID address
@@ -61,9 +61,14 @@ def sniff(interface):
             ap_name = frame.ssid.data
             print('[MANAGEMENT FRAME]  ' + subtype + ' * ' + ap_name + ' * ' + source_address + ' => ' + destination_address)
         elif frame.type == dpkt.ieee80211.CTL_TYPE:
-            print('[CONTROL FRAME]')
+            subtype = str(frame.subtype)
+            print('[CONTROL FRAME]  ' + subtype)
         elif frame.type == dpkt.ieee80211.DATA_TYPE:
-            print('[DATA FRAME]')
+            subtype = str(frame.subtype)
+            source_address = to_address(frame.data_frame.src)
+            destination_address = to_address(frame.data_frame.dst)
+            ap_address = to_address(frame.data_frame.bssid)
+            print('[DATA FRAME]  ' + subtype + ' * ' + ap_address + ' * ' + source_address + ' => ' + destination_address)
     packets.loop(-1, loop)
 
 start()
