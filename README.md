@@ -1,7 +1,7 @@
 Wifi Spy
 ========
 
-An attempt to sniff Wifi traffic.
+Sniff Wifi traffic, log device addresses.
 
 Uses [Pcapy](https://github.com/CoreSecurity/pcapy) to capture packets. It's probably the best mantained out of [many](https://pypi.python.org/pypi?%3Aaction=search&term=pcap) libraries wrapping the somewhat definitive packet capture library [libpcap](https://github.com/the-tcpdump-group/libpcap).
 
@@ -10,6 +10,8 @@ Uses [Dpkt](https://github.com/kbandla/dpkt) to interrogate and extract data fro
 
 Running
 -------
+
+There's two different sets of configuration for Mac OS and Linux in `wifispy.py`, you'll have to comment out the appropriate set before running. I've only been able to make it work on Linux so far.
 
     $ pip install -r requirements.txt
     $ sudo python wifispy.py
@@ -22,24 +24,15 @@ Approach
 
 1. Put card into [monitor mode](https://en.wikipedia.org/wiki/Monitor_mode). This means it will passively sniff all wireless traffic it sees. It differs from the somewhat similar [promiscuous mode](https://en.wikipedia.org/wiki/Promiscuous_mode), which (as I understand it) gives you more information, but requires you to be connected to a network. Not all cards support monitor mode. This is done via a terminal command, as it doesn't seem possible through Python.
 
-2. Rotate channels. There are 13 channels in the 2.4GHz band (numbers 1 to 13), which are the most commonly used, plus a number of others in the 5GHz band. Since cards can only be tuned to one channel at a time, we need to randomly switch channels in the background to ensure we're picking up devices using any channel. This code randomly selects a channel every second. Changing the channel is also done via a terminal command.
+2. Rotate channels. There are 13 channels in the 2.4GHz band, which are the most commonly used. There are also a number of others in the 5GHz range, but not all cards support these channels. Since cards can only be tuned to one channel at a time, we need to randomly switch channels in the background to ensure we're picking up devices using any channel. This is also done via a terminal command.
 
 3. Sniff packets using Pcapy. Each packet recieved goes into a function for processing.
 
-4. Process sniffed packets using Dpkt. Each first needs to be decoded. There are three types of wireless (aka. 802.11) packet: management, control, and data.
+4. Process sniffed packets using Dpkt. Each first needs to be decoded. There are three types of wireless (aka. 802.11) packet: management, control, and data. Each differs in what information it contains.
 
+5. Extract the source Mac address from each management and data packet (control packets don't include this). If the address has already been seen, update the 'last seen' field to the current time. Otherwise, store the address and use the current time for both the 'first seen' and 'last seen' fields.
 
-Problems
---------
-
-We never seem to get any real packets coming through from `pcapy`. Suspect it's an issue with the card not being correctly put into monitor mode, but can't say for sure. Doing it from the command-line works as expected.
-
-
-Other approaches
-----------------
-
-* Use [`pyshark`](https://github.com/KimiNewt/pyshark), which wraps [Wireshark](https://www.wireshark.org/)'s `tshark` command-line utility.
-* Call `tcpdump` to write a `pcap` file in one thread, then read that file from within Python.
+6. In the background, periodically write this list of Mac addresses and dates to a CSV file.
 
 
 Other tools
@@ -58,6 +51,8 @@ Articles
 
 On the command-line
 -------------------
+
+This is a list of commands I've found useful whilst working on this project.
 
 ### Mac
 
