@@ -13,10 +13,10 @@ disable_monitor = 'tcpdump -i en0 -Ic1'
 change_channel  = 'airport -c{}'
 
 # linux
-# interface = 'mon0'
-# enable_monitor  = 'ifconfig wlan1 down; iw dev wlan1 interface add mon0 type monitor; ifconfig mon0 down; iw dev mon0 set type monitor; ifconfig mon0 up'
-# disable_monitor = 'iw dev mon0 del; ifconfig wlan1 up'
-# change_channel  = 'iw dev mon0 set channel {}'
+# interface = 'wlan1mon'
+# enable_monitor  = 'ifconfig wlan1 down; iw dev wlan1 interface add wlan1mon type monitor; ifconfig wlan1mon down; iw dev wlan1mon set type monitor; ifconfig wlan1mon up'
+# disable_monitor = 'iw dev wlan1mon del; ifconfig wlan1 up'
+# change_channel  = 'iw dev wlan1mon set channel {}'
 
 channels = [
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 # 2.4GHz
