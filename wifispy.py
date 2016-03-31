@@ -54,7 +54,7 @@ def writer():
                     writer.writerow(['address', 'firstSeen', 'lastSeen'])
                     writer.writerows([[address, entry['firstSeen'], entry['lastSeen']] for address, entry in store.items()])
                 time.sleep(1) # seconds
-        except BaseException as e: sys.exit(e)
+        except BaseException: sys.exit()
     threading.Thread(target=write).start()
 
 def add(address, timestamp):
