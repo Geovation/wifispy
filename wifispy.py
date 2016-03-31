@@ -20,7 +20,7 @@ change_channel  = 'airport -c{}'
 # disable_monitor = 'iw dev wlan1mon del; ifconfig wlan1 up'
 # change_channel  = 'iw dev wlan1mon set channel {}'
 
-channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
 
 store = {}
 
