@@ -28,7 +28,7 @@ Approach
 
 3. Sniff packets using Pcapy. Each packet recieved goes into a function for processing.
 
-4. Process sniffed packets using Dpkt. Each first needs to be decoded. There are three types of wireless (aka. 802.11) packet: management, control, and data. Each differs in what information it contains.
+4. Process sniffed packets using Dpkt. Each first needs to be decoded. Using a [radiotap](http://www.radiotap.org/defined-fields) decoder means we can also pull out other interesting bits of information. There are three types of wireless (aka. 802.11) packet: management, control, and data. Each differs in what information it contains.
 
 5. Extract the source Mac address from each management and data packet (control packets don't include this). If the address has already been seen, update the 'last seen' field to the current time. Otherwise, store the address and use the current time for both the 'first seen' and 'last seen' fields.
 
