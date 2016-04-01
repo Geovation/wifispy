@@ -74,6 +74,7 @@ def sniff(interface):
         timestamp = datetime.datetime.now().isoformat()
         try:
             packet = dpkt.radiotap.Radiotap(data)
+            # packet_signal = -(256 - packet.ant_sig.db) # dBm (doesn't seem to work though)
             frame = packet.data
             if frame.type == dpkt.ieee80211.MGMT_TYPE:
                 subtype = str(frame.subtype)
