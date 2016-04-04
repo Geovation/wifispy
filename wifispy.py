@@ -10,14 +10,14 @@ import dpkt
 
 # mac
 interface = 'en0'
-enable_monitor  = 'tcpdump -i en0 -Ic1 -py IEEE802_11'
-disable_monitor = 'tcpdump -i en0 -Ic1'
+monitor_enable  = 'tcpdump -i en0 -Ic1 -py IEEE802_11'
+monitor_disable = 'tcpdump -i en0 -Ic1'
 change_channel  = 'airport en0 channel {}'
 
 # linux
 # interface = 'wlan1mon'
-# enable_monitor  = 'ifconfig wlan1 down; iw dev wlan1 interface add wlan1mon type monitor; ifconfig wlan1mon down; iw dev wlan1mon set type monitor; ifconfig wlan1mon up'
-# disable_monitor = 'iw dev wlan1mon del; ifconfig wlan1 up'
+# monitor_enable  = 'ifconfig wlan1 down; iw dev wlan1 interface add wlan1mon type monitor; ifconfig wlan1mon down; iw dev wlan1mon set type monitor; ifconfig wlan1mon up'
+# monitor_disable = 'iw dev wlan1mon del; ifconfig wlan1 up'
 # change_channel  = 'iw dev wlan1mon set channel {}'
 
 channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
@@ -25,7 +25,7 @@ channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
 store = {}
 
 def start():
-    os.system(enable_monitor)
+    os.system(monitor_enable)
     stop_rotating = rotator(channels, change_channel)
     stop_writing  = writer()
     try: sniff(interface)
@@ -34,7 +34,7 @@ def start():
     finally:
         stop_writing.set()
         stop_rotating.set()
-        os.system(disable_monitor)
+        os.system(monitor_disable)
 
 def rotator(channels, change_channel):
     def rotate(stop):
