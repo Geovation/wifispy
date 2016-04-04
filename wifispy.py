@@ -12,7 +12,7 @@ import dpkt
 interface = 'en0'
 enable_monitor  = 'tcpdump -i en0 -Ic1 -py IEEE802_11'
 disable_monitor = 'tcpdump -i en0 -Ic1'
-change_channel  = 'airport en0 -c{}'
+change_channel  = 'airport en0 channel {}'
 
 # linux
 # interface = 'wlan1mon'

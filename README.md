@@ -68,17 +68,17 @@ The default Wifi interface appears to be named `en0`.
 
 Select the channel you would like to sniff (here, channel 6):
 
-    $ airport -c6
+    $ airport channel 6
 
 See all the existing networks and their channels:
 
-    $ airport -s
+    $ airport en0 scan
 
 Put your card into monitor mode:
 
     $ sudo tcpdump -i en0 -Ic1 -py IEEE802_11
 
-If this has worked it will say so in `airport -I`.
+If this has worked it will say so in `airport en0 getinfo`.
 
 To take the card out of monitor mode:
 
