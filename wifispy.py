@@ -4,7 +4,7 @@ import random
 import time
 import datetime
 import threading
-import csv
+import json
 import pcapy
 import dpkt
 
@@ -12,7 +12,7 @@ import dpkt
 interface = 'en0'
 enable_monitor  = 'tcpdump -i en0 -Ic1 -py IEEE802_11'
 disable_monitor = 'tcpdump -i en0 -Ic1'
-change_channel  = 'airport -c{}'
+change_channel  = 'airport en0 -c{}'
 
 # linux
 # interface = 'wlan1mon'
@@ -49,17 +49,20 @@ def writer():
         try:
             while True:
                 print('\nWriting to file...\n')
-                with open('wifispy.csv', 'w') as csvFile:
-                    writer = csv.writer(csvFile)
-                    writer.writerow(['address', 'firstSeen', 'lastSeen'])
-                    writer.writerows([[address, entry['firstSeen'], entry['lastSeen']] for address, entry in store.items()])
+                with open('wifispy.json', 'w') as file:
+                    json.dump(store, file)
                 time.sleep(1) # seconds
         except BaseException: sys.exit()
     threading.Thread(target=write).start()
 
 def add(address, timestamp):
-    if address in store: store[address]['lastSeen'] = timestamp
-    else: store[address] = { 'firstSeen': timestamp, 'lastSeen': timestamp }
+    if address in store:
+        thisTimestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
+        lastSessionTimestamp = datetime.datetime.strptime(store[address][-1]['lastSeen'], '%Y-%m-%dT%H:%M:%S.%f')
+        if (thisTimestamp - lastSessionTimestamp).total_seconds() > 60 * 60: # longer than an hour ago
+            store[address].append({ 'firstSeen': timestamp, 'lastSeen': timestamp })
+        else: store[address][-1]['lastSeen'] = timestamp
+    else: store[address] = [{ 'firstSeen': timestamp, 'lastSeen': timestamp }]
 
 def to_address(address): # decode a MAC or BSSID address
     return ':'.join('%02x' % ord(b) for b in address)
