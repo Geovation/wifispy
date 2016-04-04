@@ -26,14 +26,14 @@ store = {}
 
 def start():
     os.system(enable_monitor)
-    rotating = rotator(channels, change_channel)
-    writing  = writer()
+    stop_rotating = rotator(channels, change_channel)
+    stop_writing  = writer()
     try: sniff(interface)
     except SystemError: sys.exit()
     except KeyboardInterrupt: sys.exit()
     finally:
-        writing.set()
-        rotating.set()
+        stop_writing.set()
+        stop_rotating.set()
         os.system(disable_monitor)
 
 def rotator(channels, change_channel):
