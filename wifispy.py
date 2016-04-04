@@ -26,34 +26,36 @@ store = {}
 
 def start():
     os.system(enable_monitor)
-    rotator(channels, change_channel)
-    writer()
+    rotating = rotator(channels, change_channel)
+    writing  = writer()
     try: sniff(interface)
-    except KeyboardInterrupt: sys.exit()
     except SystemError: sys.exit()
-    finally: os.system(disable_monitor)
+    except KeyboardInterrupt: sys.exit()
+    finally:
+        writing.set()
+        rotating.set()
+        os.system(disable_monitor)
 
 def rotator(channels, change_channel):
-    def rotate():
-        try:
-            while True:
-                channel = random.choice(channels)
-                print('\nChanging to channel ' + str(channel) + '\n')
-                os.system(change_channel.format(channel))
-                time.sleep(1) # seconds
-        except BaseException: sys.exit()
-    threading.Thread(target=rotate).start()
+    def rotate(stop):
+        while not stop.is_set():
+            channel = random.choice(channels)
+            print('\nChanging to channel ' + str(channel) + '\n')
+            os.system(change_channel.format(channel))
+            time.sleep(1) # seconds
+    stop = threading.Event()
+    threading.Thread(target=rotate, args=[stop]).start()
+    return stop
 
 def writer():
-    def write():
-        try:
-            while True:
-                print('\nWriting to file...\n')
-                with open('wifispy.json', 'w') as file:
-                    json.dump(store, file)
-                time.sleep(1) # seconds
-        except BaseException: sys.exit()
-    threading.Thread(target=write).start()
+    def write(stop):
+        while not stop.is_set():
+            print('\nWriting to file...\n')
+            with open('wifispy.json', 'w') as file: json.dump(store, file)
+            time.sleep(1) # seconds
+    stop = threading.Event()
+    threading.Thread(target=write, args=[stop]).start()
+    return stop
 
 def add(address, timestamp):
     if address in store:
