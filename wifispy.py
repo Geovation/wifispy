@@ -59,9 +59,9 @@ def writer():
 
 def add(address, timestamp):
     if address in store:
-        thisTimestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
-        lastSessionTimestamp = datetime.datetime.strptime(store[address][-1]['lastSeen'], '%Y-%m-%dT%H:%M:%S.%f')
-        if (thisTimestamp - lastSessionTimestamp).total_seconds() > 60 * 60: # longer than an hour ago
+        current_time = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
+        last_seen_time = datetime.datetime.strptime(store[address][-1]['lastSeen'], '%Y-%m-%dT%H:%M:%S.%f')
+        if (current_time - last_seen_time).total_seconds() > 60 * 60: # longer than an hour ago
             store[address].append({ 'firstSeen': timestamp, 'lastSeen': timestamp })
         else: store[address][-1]['lastSeen'] = timestamp
     else: store[address] = [{ 'firstSeen': timestamp, 'lastSeen': timestamp }]
