@@ -68,7 +68,7 @@ The default Wifi interface appears to be named `en0`.
 
 Select the channel you would like to sniff (here, channel 6):
 
-    $ airport channel 6
+    $ airport en0 channel 6
 
 See all the existing networks and their channels:
 
