@@ -9,16 +9,16 @@ import pcapy
 import dpkt
 
 # mac
-interface = 'en0'
-monitor_enable  = 'tcpdump -i en0 -Ic1 -py IEEE802_11'
-monitor_disable = 'tcpdump -i en0 -Ic1'
-change_channel  = 'airport en0 channel {}'
+# interface = 'en0'
+# monitor_enable  = 'tcpdump -i en0 -Ic1 -py IEEE802_11'
+# monitor_disable = 'tcpdump -i en0 -Ic1'
+# change_channel  = 'airport en0 channel {}'
 
 # linux
-# interface = 'wlan1mon'
-# monitor_enable  = 'ifconfig wlan1 down; iw dev wlan1 interface add wlan1mon type monitor; ifconfig wlan1mon down; iw dev wlan1mon set type monitor; ifconfig wlan1mon up'
-# monitor_disable = 'iw dev wlan1mon del; ifconfig wlan1 up'
-# change_channel  = 'iw dev wlan1mon set channel {}'
+interface = 'wlan1mon'
+monitor_enable  = 'ifconfig wlan1 down; iw dev wlan1 interface add wlan1mon type monitor; ifconfig wlan1mon down; iw dev wlan1mon set type monitor; ifconfig wlan1mon up'
+monitor_disable = 'iw dev wlan1mon del; ifconfig wlan1 up'
+change_channel  = 'iw dev wlan1mon set channel {}'
 
 channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
 
