@@ -79,7 +79,7 @@ def sniff(interface):
         timestamp = datetime.datetime.now().isoformat()
         try:
             packet = dpkt.radiotap.Radiotap(data)
-            # packet_signal = -(256 - packet.ant_sig.db) # dBm (doesn't seem to work though)
+            packet_signal = -(256 - packet.ant_sig.db) # dBm
             frame = packet.data
             if frame.type == dpkt.ieee80211.MGMT_TYPE:
                 subtype = str(frame.subtype)
@@ -88,17 +88,17 @@ def sniff(interface):
                 ap_address = to_address(frame.mgmt.bssid)
                 ap_name = frame.ssid.data if hasattr(frame, 'ssid') else '(n/a)'
                 add(source_address, timestamp)
-                print('[MANAGEMENT] ' + subtype + ' * ' + source_address + ' -> ' + destination_address + ' * ' + ap_name)
+                print('[MANAGEMENT] ' + subtype + ' * ' + str(packet_signal) + 'dBm * ' + source_address + ' -> ' + destination_address + ' * ' + ap_name)
             elif frame.type == dpkt.ieee80211.CTL_TYPE:
                 subtype = str(frame.subtype)
-                print('[CONTROL   ] ' + subtype)
+                print('[CONTROL   ] ' + subtype + ' * ' + str(packet_signal) + 'dBm')
             elif frame.type == dpkt.ieee80211.DATA_TYPE:
                 subtype = str(frame.subtype)
                 source_address = to_address(frame.data_frame.src)
                 destination_address = to_address(frame.data_frame.dst)
                 ap_address = to_address(frame.data_frame.bssid) if hasattr(frame.data_frame, 'bssid') else '(n/a)'
                 add(source_address, timestamp)
-                print('[DATA      ] ' + subtype + ' * ' + source_address + ' -> ' + destination_address + ' * ' + ap_address)
+                print('[DATA      ] ' + subtype + ' * ' + str(packet_signal) + 'dBm * ' + source_address + ' -> ' + destination_address + ' * ' + ap_address)
         except:
             print('[ERROR PARSING PACKET]')
     packets.loop(-1, loop)
