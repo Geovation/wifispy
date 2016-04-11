@@ -3,8 +3,8 @@ import os
 import random
 import time
 import datetime
-import threading
-import json
+import multiprocessing
+import sqlite3
 import pcapy
 import dpkt
 
@@ -22,7 +22,7 @@ change_channel  = 'iw dev wlan1mon set channel {}'
 
 channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
 
-store = {}
+queue = multiprocessing.Queue()
 
 def start():
     os.system(monitor_enable)
@@ -43,28 +43,29 @@ def rotator(channels, change_channel):
             print('\nChanging to channel ' + str(channel) + '\n')
             os.system(change_channel.format(channel))
             time.sleep(1) # seconds
-    stop = threading.Event()
-    threading.Thread(target=rotate, args=[stop]).start()
+    stop = multiprocessing.Event()
+    multiprocessing.Process(target=rotate, args=[stop]).start()
     return stop
 
 def writer():
+    db = sqlite3.connect('wifispy.sqlite3')
     def write(stop):
         while not stop.is_set():
-            print('\nWriting to file...\n')
-            with open('wifispy.json', 'w') as file: json.dump(store, file)
+            print('\nWriting to database...\n')
+            cursor = db.cursor()
+            for i in range(0, queue.qsize()):
+                item = queue.get_nowait()
+                cursor.execute("""insert into packets values (:address, :timestamp)""", item)
+            db.commit()
+            cursor.close()
             time.sleep(1) # seconds
-    stop = threading.Event()
-    threading.Thread(target=write, args=[stop]).start()
+    cursor = db.cursor()
+    cursor.execute("""create table if not exists packets (address text, timestamp timestamp)""")
+    db.commit()
+    cursor.close()
+    stop = multiprocessing.Event()
+    multiprocessing.Process(target=write, args=[stop]).start()
     return stop
-
-def add(address, timestamp):
-    if address in store:
-        current_time = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
-        last_seen_time = datetime.datetime.strptime(store[address][-1]['lastSeen'], '%Y-%m-%dT%H:%M:%S.%f')
-        if (current_time - last_seen_time).total_seconds() > 60 * 60: # longer than an hour ago
-            store[address].append({ 'firstSeen': timestamp, 'lastSeen': timestamp })
-        else: store[address][-1]['lastSeen'] = timestamp
-    else: store[address] = [{ 'firstSeen': timestamp, 'lastSeen': timestamp }]
 
 def to_address(address): # decode a MAC or BSSID address
     return ':'.join('%02x' % ord(b) for b in address)
@@ -87,7 +88,7 @@ def sniff(interface):
                 destination_address = to_address(frame.mgmt.dst)
                 ap_address = to_address(frame.mgmt.bssid)
                 ap_name = frame.ssid.data if hasattr(frame, 'ssid') else '(n/a)'
-                add(source_address, timestamp)
+                queue.put({ 'address': source_address, 'timestamp': timestamp })
                 print('[MANAGEMENT] ' + subtype + ' * ' + str(packet_signal) + 'dBm * ' + source_address + ' -> ' + destination_address + ' * ' + ap_name)
             elif frame.type == dpkt.ieee80211.CTL_TYPE:
                 subtype = str(frame.subtype)
@@ -97,7 +98,7 @@ def sniff(interface):
                 source_address = to_address(frame.data_frame.src)
                 destination_address = to_address(frame.data_frame.dst)
                 ap_address = to_address(frame.data_frame.bssid) if hasattr(frame.data_frame, 'bssid') else '(n/a)'
-                add(source_address, timestamp)
+                queue.put({ 'address': source_address, 'timestamp': timestamp })
                 print('[DATA      ] ' + subtype + ' * ' + str(packet_signal) + 'dBm * ' + source_address + ' -> ' + destination_address + ' * ' + ap_address)
         except:
             print('[ERROR PARSING PACKET]')
