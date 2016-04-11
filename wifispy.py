@@ -40,7 +40,7 @@ def rotator(channels, change_channel):
     def rotate(stop):
         while not stop.is_set():
             channel = random.choice(channels)
-            print('\nChanging to channel ' + str(channel) + '\n')
+            print('Changing to channel ' + str(channel))
             os.system(change_channel.format(channel))
             time.sleep(1) # seconds
     stop = multiprocessing.Event()
@@ -51,16 +51,16 @@ def writer():
     db = sqlite3.connect('wifispy.sqlite3')
     def write(stop):
         while not stop.is_set():
-            print('\nWriting to database...\n')
+            print('Writing to database...')
             cursor = db.cursor()
             for i in range(0, queue.qsize()):
                 item = queue.get_nowait()
-                cursor.execute("""insert into packets values (:address, :timestamp)""", item)
+                cursor.execute("""insert into packets values (:timestamp, :type, :subtype, :strength, :source_address, :destination_address, :access_point_name, :access_point_address)""", item)
             db.commit()
             cursor.close()
             time.sleep(1) # seconds
     cursor = db.cursor()
-    cursor.execute("""create table if not exists packets (address text, timestamp timestamp)""")
+    cursor.execute("""create table if not exists packets (timestamp, type, subtype, strength, source_address, destination_address, access_point_name, access_point_address)""")
     db.commit()
     cursor.close()
     stop = multiprocessing.Event()
@@ -83,23 +83,41 @@ def sniff(interface):
             packet_signal = -(256 - packet.ant_sig.db) # dBm
             frame = packet.data
             if frame.type == dpkt.ieee80211.MGMT_TYPE:
-                subtype = str(frame.subtype)
-                source_address = to_address(frame.mgmt.src)
-                destination_address = to_address(frame.mgmt.dst)
-                ap_address = to_address(frame.mgmt.bssid)
-                ap_name = frame.ssid.data if hasattr(frame, 'ssid') else '(n/a)'
-                queue.put({ 'address': source_address, 'timestamp': timestamp })
-                print('[MANAGEMENT] ' + subtype + ' * ' + str(packet_signal) + 'dBm * ' + source_address + ' -> ' + destination_address + ' * ' + ap_name)
+                record = {
+                    'timestamp': timestamp,
+                    'type': 'management',
+                    'subtype': str(frame.subtype),
+                    'strength': packet_signal,
+                    'source_address': to_address(frame.mgmt.src),
+                    'destination_address': to_address(frame.mgmt.dst),
+                    'access_point_name': frame.ssid.data if hasattr(frame, 'ssid') else '(n/a)',
+                    'access_point_address': to_address(frame.mgmt.bssid)
+                }
+                queue.put(record)
             elif frame.type == dpkt.ieee80211.CTL_TYPE:
-                subtype = str(frame.subtype)
-                print('[CONTROL   ] ' + subtype + ' * ' + str(packet_signal) + 'dBm')
+                record = {
+                    'timestamp': timestamp,
+                    'type': 'control',
+                    'subtype': str(frame.subtype),
+                    'strength': packet_signal,
+                    'source_address': '(n/a)', # not available in control packets
+                    'destination_address': '(n/a)', # not available in control packets
+                    'access_point_name': '(n/a)', # not available in control packets
+                    'access_point_address': '(n/a)' # not available in control packets
+                }
+                queue.put(record)
             elif frame.type == dpkt.ieee80211.DATA_TYPE:
-                subtype = str(frame.subtype)
-                source_address = to_address(frame.data_frame.src)
-                destination_address = to_address(frame.data_frame.dst)
-                ap_address = to_address(frame.data_frame.bssid) if hasattr(frame.data_frame, 'bssid') else '(n/a)'
-                queue.put({ 'address': source_address, 'timestamp': timestamp })
-                print('[DATA      ] ' + subtype + ' * ' + str(packet_signal) + 'dBm * ' + source_address + ' -> ' + destination_address + ' * ' + ap_address)
+                record = {
+                    'timestamp': timestamp,
+                    'type': 'data',
+                    'subtype': str(frame.subtype),
+                    'strength': packet_signal,
+                    'source_address': to_address(frame.data_frame.src),
+                    'destination_address': to_address(frame.data_frame.dst),
+                    'access_point_name': '(n/a)', # not available in data packets
+                    'access_point_address': to_address(frame.data_frame.bssid) if hasattr(frame.data_frame, 'bssid') else '(n/a)'
+                }
+                queue.put(record)
         except:
             print('[ERROR PARSING PACKET]')
     packets.loop(-1, loop)
