@@ -58,15 +58,41 @@ def writer():
             try:
                 logging.info('Writing...')
                 cursor = db.cursor()
-                for i in range(0, queue.qsize()):
+                for _ in range(0, queue.qsize()):
                     item = queue.get_nowait()
-                    cursor.execute("""insert into packets values (:timestamp, :type, :subtype, :strength, :source_address, :destination_address, :access_point_name, :access_point_address)""", item)
+                    insert = (
+                        "insert into packets values"
+                        "("
+                        ":timestamp,"
+                        ":type,"
+                        ":subtype,"
+                        ":strength,"
+                        ":source_address,"
+                        ":destination_address,"
+                        ":access_point_name,"
+                        ":access_point_address"
+                        ")"
+                    )
+                    cursor.execute(insert, item)
                 db.commit()
                 cursor.close()
                 time.sleep(1) # seconds
             except KeyboardInterrupt: pass
     cursor = db.cursor()
-    cursor.execute("""create table if not exists packets (timestamp, type, subtype, strength, source_address, destination_address, access_point_name, access_point_address)""")
+    create = (
+        "create table if not exists packets"
+        "("
+        "timestamp,"
+        "type,"
+        "subtype,"
+        "strength,"
+        "source_address,"
+        "destination_address,"
+        "access_point_name,"
+        "access_point_address"
+        ")"
+    )
+    cursor.execute(create)
     db.commit()
     cursor.close()
     stop = multiprocessing.Event()
