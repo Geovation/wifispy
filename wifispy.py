@@ -1,5 +1,6 @@
 import sys
 import os
+import traceback
 import random
 import time
 import datetime
@@ -118,8 +119,8 @@ def sniff(interface):
                     'access_point_address': to_address(frame.data_frame.bssid) if hasattr(frame.data_frame, 'bssid') else '(n/a)'
                 }
                 queue.put(record)
-        except:
-            print('[ERROR PARSING PACKET]')
+        except Exception as e:
+            print(traceback.format_exc())
     packets.loop(-1, loop)
 
 start()
