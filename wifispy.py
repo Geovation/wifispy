@@ -59,21 +59,23 @@ def writer():
                 logging.info('Writing...')
                 cursor = db.cursor()
                 for _ in range(0, queue.qsize()):
-                    item = queue.get_nowait()
-                    insert = (
-                        "insert into packets values"
-                        "("
-                        ":timestamp,"
-                        ":type,"
-                        ":subtype,"
-                        ":strength,"
-                        ":source_address,"
-                        ":destination_address,"
-                        ":access_point_name,"
-                        ":access_point_address"
-                        ")"
-                    )
-                    cursor.execute(insert, item)
+                    try:
+                        item = queue.get_nowait()
+                        insert = (
+                            "insert into packets values"
+                            "("
+                            ":timestamp,"
+                            ":type,"
+                            ":subtype,"
+                            ":strength,"
+                            ":source_address,"
+                            ":destination_address,"
+                            ":access_point_name,"
+                            ":access_point_address"
+                            ")"
+                        )
+                        cursor.execute(insert, item)
+                    except Queue.Empty: pass
                 db.commit()
                 cursor.close()
                 time.sleep(1) # seconds
