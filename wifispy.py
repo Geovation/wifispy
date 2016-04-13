@@ -30,7 +30,6 @@ def start():
     stop_rotating = rotator(channels, change_channel)
     stop_writing  = writer()
     try: sniff(interface)
-    except SystemError: sys.exit()
     except KeyboardInterrupt: sys.exit()
     finally:
         stop_writing.set()
@@ -40,10 +39,12 @@ def start():
 def rotator(channels, change_channel):
     def rotate(stop):
         while not stop.is_set():
-            channel = random.choice(channels)
-            print('Changing to channel ' + str(channel))
-            os.system(change_channel.format(channel))
-            time.sleep(1) # seconds
+            try:
+                channel = random.choice(channels)
+                print('Changing to channel ' + str(channel))
+                os.system(change_channel.format(channel))
+                time.sleep(1) # seconds
+            except KeyboardInterrupt: pass
     stop = multiprocessing.Event()
     multiprocessing.Process(target=rotate, args=[stop]).start()
     return stop
@@ -52,14 +53,16 @@ def writer():
     db = sqlite3.connect('wifispy.sqlite3')
     def write(stop):
         while not stop.is_set():
-            print('Writing to database...')
-            cursor = db.cursor()
-            for i in range(0, queue.qsize()):
-                item = queue.get_nowait()
-                cursor.execute("""insert into packets values (:timestamp, :type, :subtype, :strength, :source_address, :destination_address, :access_point_name, :access_point_address)""", item)
-            db.commit()
-            cursor.close()
-            time.sleep(1) # seconds
+            try:
+                print('Writing...')
+                cursor = db.cursor()
+                for i in range(0, queue.qsize()):
+                    item = queue.get_nowait()
+                    cursor.execute("""insert into packets values (:timestamp, :type, :subtype, :strength, :source_address, :destination_address, :access_point_name, :access_point_address)""", item)
+                db.commit()
+                cursor.close()
+                time.sleep(1) # seconds
+            except KeyboardInterrupt: pass
     cursor = db.cursor()
     cursor.execute("""create table if not exists packets (timestamp, type, subtype, strength, source_address, destination_address, access_point_name, access_point_address)""")
     db.commit()
