@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 import traceback
 import random
 import time
@@ -26,6 +27,7 @@ channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
 queue = multiprocessing.Queue()
 
 def start():
+    logging.basicConfig(filename='wifispy.log', format='%(levelname)s:%(message)s')
     os.system(monitor_enable)
     stop_rotating = rotator(channels, change_channel)
     stop_writing  = writer()
@@ -41,7 +43,7 @@ def rotator(channels, change_channel):
         while not stop.is_set():
             try:
                 channel = random.choice(channels)
-                print('Changing to channel ' + str(channel))
+                logging.info('Changing to channel ' + str(channel))
                 os.system(change_channel.format(channel))
                 time.sleep(1) # seconds
             except KeyboardInterrupt: pass
@@ -54,7 +56,7 @@ def writer():
     def write(stop):
         while not stop.is_set():
             try:
-                print('Writing...')
+                logging.info('Writing...')
                 cursor = db.cursor()
                 for i in range(0, queue.qsize()):
                     item = queue.get_nowait()
@@ -123,7 +125,7 @@ def sniff(interface):
                 }
                 queue.put(record)
         except Exception as e:
-            print(traceback.format_exc())
+            logging.error(traceback.format_exc())
     packets.loop(-1, loop)
 
 start()
