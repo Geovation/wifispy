@@ -27,7 +27,7 @@ channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
 queue = multiprocessing.Queue()
 
 def start():
-    logging.basicConfig(filename='wifispy.log', format='%(levelname)s:%(message)s')
+    logging.basicConfig(filename='wifispy.log', format='%(levelname)s:%(message)s', level=logging.INFO)
     os.system(monitor_enable)
     stop_rotating = rotator(channels, change_channel)
     stop_writing  = writer()
