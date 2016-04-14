@@ -6,6 +6,7 @@ import random
 import time
 import datetime
 import multiprocessing
+import Queue
 import sqlite3
 import pcapy
 import dpkt
@@ -59,26 +60,25 @@ def writer():
                 logging.info('Writing...')
                 cursor = db.cursor()
                 for _ in range(0, queue.qsize()):
-                    try:
-                        item = queue.get_nowait()
-                        insert = (
-                            "insert into packets values"
-                            "("
-                            ":timestamp,"
-                            ":type,"
-                            ":subtype,"
-                            ":strength,"
-                            ":source_address,"
-                            ":destination_address,"
-                            ":access_point_name,"
-                            ":access_point_address"
-                            ")"
-                        )
-                        cursor.execute(insert, item)
-                    except Queue.Empty: pass
+                    item = queue.get_nowait()
+                    insert = (
+                        "insert into packets values"
+                        "("
+                        ":timestamp,"
+                        ":type,"
+                        ":subtype,"
+                        ":strength,"
+                        ":source_address,"
+                        ":destination_address,"
+                        ":access_point_name,"
+                        ":access_point_address"
+                        ")"
+                    )
+                    cursor.execute(insert.decode('utf-8'), item)
                 db.commit()
                 cursor.close()
                 time.sleep(1) # seconds
+            except Queue.Empty: pass
             except KeyboardInterrupt: pass
     cursor = db.cursor()
     create = (
@@ -94,7 +94,7 @@ def writer():
         "access_point_address"
         ")"
     )
-    cursor.execute(create)
+    cursor.execute(create.decode('utf-8'))
     db.commit()
     cursor.close()
     stop = multiprocessing.Event()
