@@ -21,7 +21,7 @@ import dpkt
 interface = 'wlan1mon'
 monitor_enable  = 'ifconfig wlan1 down; iw dev wlan1 interface add wlan1mon type monitor; ifconfig wlan1mon down; iw dev wlan1mon set type monitor; ifconfig wlan1mon up'
 monitor_disable = 'iw dev wlan1mon del; ifconfig wlan1 up'
-change_channel  = 'iw dev wlan1mon set channel {}'
+change_channel  = 'iw dev wlan1mon set channel %s'
 
 channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
 
@@ -43,9 +43,9 @@ def rotator(channels, change_channel):
     def rotate(stop):
         while not stop.is_set():
             try:
-                channel = random.choice(channels)
-                logging.info('Changing to channel ' + str(channel))
-                os.system(change_channel.format(channel))
+                channel = str(random.choice(channels))
+                logging.info('Changing to channel ' + channel)
+                os.system(change_channel % channel)
                 time.sleep(1) # seconds
             except KeyboardInterrupt: pass
     stop = multiprocessing.Event()
