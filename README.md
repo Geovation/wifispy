@@ -42,6 +42,7 @@ Unanswered questions
 
 * Very occassionally the error `Key error: 1 10` gets printed to the console. I don't know why.
 * The logs show periodic exceptions (`Key error: 127`) from trying to parse some packets. This seems to happen more often when the card is tuned to channel 6, from what I can see. I suspect the source is some device broadcasting malformed packets on this channel, but I've not been able to confirm this.
+* I've derived a number for signal (in dBm), but it does not take into account how much noise there is, although that's probably relevant too.
 * I've not got this to work on OS X -- BSD-based systems use the `/dev/bpf*` devices, which Pcapy doesn't seem to be able to cope with. It doesn't look like Scapy supports it either, but it does seem to [be being worked on](https://github.com/secdev/scapy/issues/104).
 
 
