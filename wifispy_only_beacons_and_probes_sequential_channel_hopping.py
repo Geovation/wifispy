@@ -94,7 +94,7 @@ def rotator(channels, change_channel):
 			print "Changing to channel: " + str(channel)
                 	os.system(change_channel % channel)
                 	time.sleep(1) # seconds
-            except KeyboardInterrupt: pass
+            except KeyboardInterrupt: sys.exit()
     stop = multiprocessing.Event()
     multiprocessing.Process(target=rotate, args=[stop]).start()
     return stop
