@@ -1,15 +1,31 @@
+#!/usr/bin/python3
+
+# CHANGELOG
+# 19SEP2021 - successfully converted this to python 3
+#             left in the filter for "DeprecationWarning" just in case it is needed for the loop on or near line 301
+#
+# 19SEP2021 - adjusted channel list so that it scans on all bands (a,b, and g); this had to be adjusted
+#             because some wi-fi channels can't be used by our listening interface
+#
+# TODO - fix lines 260, 261 so that exceptions are handled; sometimes signal strength doesn't make it and this needs to be accounted for
+#
+# Notes: dpkt might not handle certain conditions well; see this url for examples on how to handle exceptions:
+
 import sys
 import os
 import logging
 import traceback
 import random
+import subprocess
 import time
 import datetime
 import multiprocessing
-import Queue
+import queue
 import sqlite3
 import pcapy
 import dpkt
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # mac
 # interface = 'en0'
@@ -18,14 +34,67 @@ import dpkt
 # change_channel  = 'airport en0 channel {}'
 
 # linux
-interface = 'wlan1mon'
-monitor_enable  = 'ifconfig wlan1 down; iw dev wlan1 interface add wlan1mon type monitor; ifconfig wlan1mon down; iw dev wlan1mon set type monitor; ifconfig wlan1mon up'
-monitor_disable = 'iw dev wlan1mon del; ifconfig wlan1 up'
-change_channel  = 'iw dev wlan1mon set channel %s'
+interface = sys.argv[1]
 
-channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
+INTERFACE_RETRIES_BEFORE_QUIT = 5
+DEVICE_STARTUP_MONITOR_MODE_DELAY = 3
 
-queue = multiprocessing.Queue()
+iw_dev = 'sudo iw dev'
+monitor_enable  = ''.join(['sudo ip link set ', interface, ' down;sudo iw ', interface, ' set monitor control;sudo ip link set ', interface, ' up'])
+monitor_disable  = ''.join(['sudo ip link set ', interface, ' down;sudo iw ', interface, ' set type managed;sudo ip link set ', interface, ' down'])
+change_channel = ''.join(['sudo iw dev ', interface, ' set channel %s'])
+
+#channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] # 2.4GHz only
+#channels = [36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 100, 102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 149, 151, 153, 155, 157, 159, 161, 165] # 5Ghz only
+channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161, 165] # 2.4 and 5 Ghz 
+
+# relies on parsing output from iwconfig to make sure that the specified interface is in monitor mode
+def interface_monitor_mode_check():
+    # TODO switch from iwconfig to iw; iwconfig is deprecated
+    check_for_monitor_mode_for_interface = subprocess.check_output(''.join(['iwconfig ',interface,' | grep \'Mode:\' | awk -F \':\' \'{print $2}\' | awk \'{print $1}\'']), shell=True)
+    #strip the newline character from the end
+    check_for_monitor_mode_for_interface = check_for_monitor_mode_for_interface.rstrip().decode()
+    if check_for_monitor_mode_for_interface != 'Monitor':
+        print("Monitor mode is not enabled.")
+        print("Increase the DEVICE_STARTUP_MONITOR_MODE_DELAY value and check the installed driver.")
+        sys.exit()
+    else:
+        print("Monitor mode is enabled.  Check passed.")
+
+def interface_existence_check():
+        """ get the status code of "ip link show interface_name"
+         a status code of zero indicates that it found the interface in the OS and executed cleanly """
+        current_retries = 0
+        check_for_status_zero_for_interface = os.system(''.join(['ip link show ', interface]))
+        #print (str(check_for_status_zero_for_interface))
+        if check_for_status_zero_for_interface == 0:
+            print (interface + " interface exists")
+            print ("Entering monitor mode...")
+            return True
+        else:
+            print (interface + " doesn't exist.")
+            print ("Check your setting for the wireless interface.")
+            print ("If you updated any OS packages, don't forget to reload any custom wireless drivers.")
+            
+            if current_retries < INTERFACE_RETRIES_BEFORE_QUIT:
+                current_retries += 1
+                interface_existence_check()
+                return False
+            sys.exit()
+
+def kill_interfering_services():
+    # these are services that are stopped in Ubuntu/Debian
+    # they have traditionally caused problems for any wireless interface in monitor mode
+    subprocess.call("sudo systemctl stop wpa_supplicant", shell=True)
+    subprocess.call("sudo systemctl stop avahi-daemon", shell=True)
+
+def restore_interfering_services():
+    # restore wpa_supplicant upon exit
+    subprocess.call("sudo systemctl start wpa_supplicant", shell=True)
+    subprocess.call("sudo systemctl start avahi-daemon", shell=True)
+
+# do not rename this to queue or KeyboardInterrupt won't work correctly
+q = multiprocessing.Queue()
 
 subtypes_management = {
     0: 'association-request',
@@ -76,21 +145,44 @@ def start():
     stop_rotating = rotator(channels, change_channel)
     stop_writing  = writer()
     try: sniff(interface)
-    except KeyboardInterrupt: sys.exit()
+    except KeyboardInterrupt: pass
     finally:
         stop_writing.set()
         stop_rotating.set()
         os.system(monitor_disable)
 
+#def rotator(channels, change_channel):
+#    def rotate(stop):
+#        while not stop.is_set():
+#            try:
+#                # random channel selection
+#                channel = str(random.choice(channels))
+#                logging.info('Changing to channel ' + channel)
+#                os.system(change_channel % channel)
+#                time.sleep(1) # seconds
+#            except KeyboardInterrupt: pass
+#    stop = multiprocessing.Event()
+#    multiprocessing.Process(target=rotate, args=[stop]).start()
+#    return stop
+
 def rotator(channels, change_channel):
     def rotate(stop):
+        amount_of_channels = len(channels)
+        print("Amount of channels defined: " + str(amount_of_channels))
         while not stop.is_set():
             try:
-                channel = str(random.choice(channels))
-                logging.info('Changing to channel ' + channel)
-                os.system(change_channel % channel)
-                time.sleep(1) # seconds
-            except KeyboardInterrupt: pass
+                for channel_index in range(0,amount_of_channels):
+                    #print str(channels[channel_index])
+                    channel = str(channels[channel_index])
+                    if channel_index == len(channels):
+                        channel_index = 0
+                        #channel = str(random.choice(channels))
+                    logging.info('Changing to channel ' + channel)
+                    print("Changing to channel: " + str(channel))
+                    os.system(change_channel % channel)
+                    time.sleep(1) # seconds
+            #except KeyboardInterrupt: pass
+            except KeyboardInterrupt: sys.exit()
     stop = multiprocessing.Event()
     multiprocessing.Process(target=rotate, args=[stop]).start()
     return stop
@@ -102,8 +194,8 @@ def writer():
             try:
                 logging.info('Writing...')
                 cursor = db.cursor()
-                for _ in range(0, queue.qsize()):
-                    item = queue.get_nowait()
+                for _ in range(0, q.qsize()):
+                    item = q.get_nowait()
                     insert = (
                         "insert into packets values"
                         "("
@@ -117,11 +209,12 @@ def writer():
                         ":access_point_address"
                         ")"
                     )
-                    cursor.execute(insert.decode('utf-8'), item)
+                    #cursor.execute(insert.decode('utf-8'), item)
+                    cursor.execute(insert, item)
                 db.commit()
                 cursor.close()
                 time.sleep(1) # seconds
-            except Queue.Empty: pass
+            except queue.Empty: pass
             except KeyboardInterrupt: pass
     cursor = db.cursor()
     create = (
@@ -137,7 +230,7 @@ def writer():
         "access_point_address"
         ")"
     )
-    cursor.execute(create.decode('utf-8'))
+    cursor.execute(create)
     db.commit()
     cursor.close()
     stop = multiprocessing.Event()
@@ -145,9 +238,17 @@ def writer():
     return stop
 
 def to_address(address): # decode a MAC or BSSID address
-    return ':'.join('%02x' % ord(b) for b in address)
+    return ':'.join('%02x' % b for b in address)
 
 def sniff(interface):
+    interface_existence_check()
+    kill_interfering_services()
+    os.system(monitor_enable)
+    time.sleep(DEVICE_STARTUP_MONITOR_MODE_DELAY) # Delay to wait for monitor mode
+    # insert check here for confirmation of monitor mode
+    interface_monitor_mode_check()
+    os.system(iw_dev)
+
     max_packet_size = 256 # bytes
     promiscuous = 0 # boolean masquerading as an int
     timeout = 100 # milliseconds
@@ -156,7 +257,10 @@ def sniff(interface):
     def loop(header, data):
         timestamp = datetime.datetime.now().isoformat()
         try:
+            #try:
             packet = dpkt.radiotap.Radiotap(data)
+            #except (KeyError, dpkt.UnpackError):
+            #    pass
             packet_signal = -(256 - packet.ant_sig.db) # dBm
             frame = packet.data
             if frame.type == dpkt.ieee80211.MGMT_TYPE:
@@ -170,7 +274,7 @@ def sniff(interface):
                     'access_point_name': frame.ssid.data if hasattr(frame, 'ssid') else '(n/a)',
                     'access_point_address': to_address(frame.mgmt.bssid)
                 }
-                queue.put(record)
+                q.put(record)
             elif frame.type == dpkt.ieee80211.CTL_TYPE:
                 record = {
                     'timestamp': timestamp,
@@ -182,7 +286,7 @@ def sniff(interface):
                     'access_point_name': '(n/a)', # not available in control packets
                     'access_point_address': '(n/a)' # not available in control packets
                 }
-                queue.put(record)
+                q.put(record)
             elif frame.type == dpkt.ieee80211.DATA_TYPE:
                 record = {
                     'timestamp': timestamp,
@@ -194,7 +298,7 @@ def sniff(interface):
                     'access_point_name': '(n/a)', # not available in data packets
                     'access_point_address': to_address(frame.data_frame.bssid) if hasattr(frame.data_frame, 'bssid') else '(n/a)'
                 }
-                queue.put(record)
+                q.put(record)
         except Exception as e:
             logging.error(traceback.format_exc())
     packets.loop(-1, loop)
